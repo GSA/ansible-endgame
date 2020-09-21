@@ -1,0 +1,50 @@
+---
+- name: checking for agent install
+  win_service:
+    name: besclient
+  register: agent
+
+- debug:
+    msg: "endgame agent not found (installing)"
+  when: not agent.exists
+
+- debug:
+    msg: "endgame agent found (skipping install)"
+  when: agent.exists
+
+- name: create {{ windows_agent_log }} directory
+  win_file:
+    path: '{{ windows_agent_log }}'
+    recurse: yes
+    state: directory
+  when: not agent.exists
+
+- name: create {{ windows_endgame_agent_path }} directory
+  win_file:
+    path: '{{ windows_endgame_agent_path }}'
+    recurse: yes
+    state: directory
+  when: not agent.exists
+
+- name: copy actionsite.afxm to {{ windows_endgame_agent_path }} directory
+  win_get_url:
+    url: '{{ endgame_actionsite_url }}'
+    dest: '{{ windows_endgame_agent_path }}\ActionSite.afxm'
+    timeout: 600
+  when: not agent.exists
+
+- name: install endgame agent (windows)
+  win_package:
+    path: '{{ windows_endgame_agent_url }}'
+    log_path: '{{ windows_agent_log }}\endgame_log.txt'
+    product_id: '{{ windows_endgame_product_id }}'
+    state: present
+    arguments: /qn
+  when: not agent.exists
+
+- name: verify endgame started
+  win_service:
+    name:
+    enabled: yes
+    state: started
+    start_mode: auto
