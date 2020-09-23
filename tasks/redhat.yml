@@ -1,7 +1,7 @@
 ---
 - name: checking for agent install
   stat:
-    path:
+    path: /usr/sbin/esensor
   register: agent
 
 - debug:
@@ -12,34 +12,25 @@
     msg: "endgame agent found (skipping install)"
   when: agent.stat.exists
 
-- name: create {{ redhat_endgame_agent_path }} directory
-  file:
-    path: '{{ redhat_endgame_agent_path }}'
-    recurse: yes
-    state: directory
-    mode: 0500
-  when: not agent.stat.exists
-
-- name: install endgame agent (redhat)
-  yum:
-    name: '{{ redhat_endgame_agent_url }}'
-    state: present
-    validate_certs: no
-    disable_plugin: "yum-rhn-plugin"
-    disablerepo: "*"
-    download_dir: '{{ redhat_endgame_agent_path }}'
-  when: not agent.stat.exists
-
-- name: copy actionsite.afxm to {{ redhat_endgame_agent_path }} directory
+- name: copy endgame.cfg to /tmp directory
   get_url:
-    url: '{{ endgame_actionsite_url }}'
-    dest: '{{ redhat_endgame_agent_path }}/actionsite.afxm'
+    url: '{{ endgame_config_url }}'
+    dest: '/tmp/endgame.cfg'
     validate_certs: no
     mode: '0755'
   when: not agent.stat.exists
 
+- name: install endgame agent (redhat)
+  shell: |
+    '{{ redhat_endgame_agent_url }}'
+    -k '{{ agent_secrets.endgame_key }}'
+    -c '/tmp/endgame.cfg'
+  args:
+    creates: /usr/sbin/esensor
+  when: not agent.stat.exists
+
 - name: verify endgame started
   service:
-    name:
+    name: ensensor
     enabled: yes
     state: started

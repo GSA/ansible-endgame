@@ -1,7 +1,7 @@
 ---
 - name: checking for agent install
   win_service:
-    name: besclient
+    name: esensor
   register: agent
 
 - debug:
@@ -26,11 +26,12 @@
     state: directory
   when: not agent.exists
 
-- name: copy actionsite.afxm to {{ windows_endgame_agent_path }} directory
+- name: copy endgame.cfg to /tmp directory
   win_get_url:
-    url: '{{ endgame_actionsite_url }}'
-    dest: '{{ windows_endgame_agent_path }}\ActionSite.afxm'
-    timeout: 600
+    url: '{{ endgame_config_url }}'
+    dest: 'C:\\Temp\\endgame.cfg'
+    validate_certs: no
+    mode: '0755'
   when: not agent.exists
 
 - name: install endgame agent (windows)
@@ -39,12 +40,13 @@
     log_path: '{{ windows_agent_log }}\endgame_log.txt'
     product_id: '{{ windows_endgame_product_id }}'
     state: present
-    arguments: /qn
+    arguments: >
+      '-c C:\\Temp\\endgame.cfg -k {{ agent_secrets.endgame_key }}'
   when: not agent.exists
 
 - name: verify endgame started
   win_service:
-    name:
+    name: esensor
     enabled: yes
     state: started
     start_mode: auto
