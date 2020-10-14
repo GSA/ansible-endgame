@@ -12,4 +12,4 @@ redhat_endgame_agent_url: "" # default redhat agent url
 windows_endgame_agent_path: "" # default windows install directory
 windows_endgame_agent_url: "" # default windows agent artifactory url
 windows_endgame_product_id: "" #  win_package using a url requires a product_id
-windows_agent_log: "C:\\Temp\\Logs" # default agent windows log directory
+windows_agent_log: "" # default agent windows log directory

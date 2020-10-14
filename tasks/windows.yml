@@ -26,22 +26,39 @@
     state: directory
   when: not agent.exists
 
-- name: copy endgame.cfg to /tmp directory
+- name: copy endgame.zip to C:\Temp directory
   win_get_url:
-    url: '{{ endgame_config_url }}'
-    dest: 'C:\\Temp\\endgame.cfg'
+    url: '{{ windows_endgame_config_url }}'
+    dest: 'C:\\Temp\\endgame.zip'
     validate_certs: no
-    mode: '0755'
   when: not agent.exists
 
+- name: unzip endgame.zip to C:\Temp directory
+  win_unzip:
+    src: 'C:\\Temp\\endgame.zip'
+    dest: 'C:\\Temp'
+
 - name: install endgame agent (windows)
-  win_package:
-    path: '{{ windows_endgame_agent_url }}'
-    log_path: '{{ windows_agent_log }}\endgame_log.txt'
-    product_id: '{{ windows_endgame_product_id }}'
-    state: present
-    arguments: >
-      '-c C:\\Temp\\endgame.cfg -k {{ agent_secrets.endgame_key }}'
+  win_command:
+    cmd:
+      .\SensorInstaller-Detect-Policy.exe
+      -c 'SensorInstaller-Detect-Policy.cfg'
+      -k '{{ agent_secrets.endgame_key }}'
+      -l 'C:\\Temp\\Logs\\endgame_log.txt'
+    chdir: 'C:\\Temp\\SensorInstaller-Detect-Policy\\windows'
+  when: not agent.exists
+
+- name: delete endgame installer directory
+  win_file:
+    path: 'C:\\Temp\\SensorInstaller-Detect-Policy'
+    recurse: yes
+    state: absent
+  when: not agent.exists
+
+- name: delete endgame zip
+  win_file:
+    path: 'C:\\Temp\\endgame.zip'
+    state: absent
   when: not agent.exists
 
 - name: verify endgame started

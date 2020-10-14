@@ -12,21 +12,41 @@
     msg: "endgame agent found (skipping install)"
   when: agent.stat.exists
 
-- name: copy endgame.cfg to /tmp directory
+- name: copy endgame.zip to /tmp directory
   get_url:
-    url: '{{ endgame_config_url }}'
-    dest: '/tmp/endgame.cfg'
+    url: '{{ redhat_endgame_config_url }}'
+    dest: '/tmp/endgame.zip'
     validate_certs: no
     mode: '0755'
   when: not agent.stat.exists
 
+- name: unzip endgame.zip to /tmp directory
+  unarchive:
+    src: /tmp/endgame.zip
+    dest: /tmp
+  when: not agent.stat.exists
+
 - name: install endgame agent (redhat)
-  shell: |
-    '{{ redhat_endgame_agent_url }}'
+  shell:
+    SensorInstaller-Detect-Policy
+    -c SensorInstaller-Detect-Policy.cfg
     -k '{{ agent_secrets.endgame_key }}'
-    -c '/tmp/endgame.cfg'
   args:
-    creates: /usr/sbin/esensor
+    chdir: /tmp/SensorInstaller-Detect-Policy/linux/
+    creates: '{{ redhat_endgame_agent_path }}'
+  when: not agent.stat.exists
+
+- name: cleanup /tmp endgame.zip
+  file:
+    state: absent
+    path: /tmp/endgame.zip
+  when: not agent.stat.exists
+
+- name: cleanup /tmp/SensorInstaller-Detect-Policy
+  file:
+    state: absent
+    recurse: yes
+    path: /tmp/SensorInstaller-Detect-Policy
   when: not agent.stat.exists
 
 - name: verify endgame started
